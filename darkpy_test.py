@@ -42,7 +42,7 @@ def draw_boxes(detected_objects, img, colors):
 		detected_objects[i].drawBox(img, colors[i])
 
 
-impath = darknet_path + '/data/boat_enhanced.png'
+impath = darknet_path + '/data/boat.png'
 
 print('impath: ', impath)
 
