@@ -48,7 +48,7 @@ def draw_boxes(detected_objects, img, colors):
 im_width = 1920
 im_height = 320
 
-# im_width/im_height = 6
+num_subframes = int(1920 / 320) # = 6
 
 
 
@@ -65,17 +65,9 @@ while(1):
     ret, frame = cap.read()
     if(ret == False):
         break
-    # cv2.imshow('frame',frame)
-    #cv2.waitKey(0)
-    # k = cv2.waitKey(30) & 0xff
-    # if k == 27:
-    #     break
-    
-    #height, width = frame.shape[:2]
-    #print(height, '     ', width)
     
     images = []
-    for i in range(6):
+    for i in range(num_subframes):
         images.append(frame[0:im_height, i*im_height:(i+1)*im_height])
         cv2.imwrite(os.path.join(path+str(i), 'temp_'+str(im_count)+'.png'),images[i])
         objects = detect(os.path.join(path+str(i), 'temp_'+str(im_count)+'.png'))
@@ -97,21 +89,3 @@ end = time.time()
 print('TIME:  ', end - start)
 
 
-
-
-
-
-# impath = darknet_path + '/data/boats_clutter.png'
-
-# print('impath: ', impath)
-
-
-# img = cv2.imread(impath)
-# detected_objects = detect(impath)
-# draw_boxes(detected_objects, img, colors)
-
-
-
-
-# cv2.imshow('image', img)
-# cv2.waitKey(0)

@@ -19,7 +19,7 @@ class Detected_object():
 
 
 
-colors = [(0,255,0), (0,0,255), (255,0,0), (255,255,0), (0,255,255), (255,0,255)]
+colors = [(0,255,0), (0,0,255), (255,0,0), (255,255,0), (0,255,255), (255,0,255), (0,125,125), (125,0,125), (125,125,0)]
 darknet_path = '/home/simenvg/environments/my_env/darknet'
 
 
@@ -34,7 +34,8 @@ def detect(img_path):
 	result = detector.detect(img_path)
 	objects = []
 	for elem in result:
-		objects.append(Detected_object(elem['left'], elem['right'], elem['top'], elem['bottom'], elem['class'], elem['prob']))
+		if elem['class'] == 'boat':
+			objects.append(Detected_object(elem['left'], elem['right'], elem['top'], elem['bottom'], elem['class'], elem['prob']))
 	return objects
 
 def draw_boxes(detected_objects, img, colors):
@@ -42,7 +43,7 @@ def draw_boxes(detected_objects, img, colors):
 		detected_objects[i].drawBox(img, colors[i])
 
 
-impath = darknet_path + '/data/boat.png'
+impath = darknet_path + '/data/boats_clutter.png'
 
 print('impath: ', impath)
 
@@ -52,7 +53,7 @@ detected_objects = detect(impath)
 draw_boxes(detected_objects, img, colors)
 
 
-
+img = img[0:50, 0:50]
 
 cv2.imshow('image', img)
 cv2.waitKey(0)
