@@ -51,9 +51,6 @@ im_height = 320
 num_subframes = int(1920 / 320) # = 6
 
 
-
-
-
 start = time.time()
 print("Start")
 

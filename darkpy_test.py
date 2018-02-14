@@ -53,7 +53,7 @@ detected_objects = detect(impath)
 draw_boxes(detected_objects, img, colors)
 
 
-img = img[0:50, 0:50]
+
 
 cv2.imshow('image', img)
 cv2.waitKey(0)
