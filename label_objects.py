@@ -2,23 +2,24 @@ import cv2
 import os
 import numpy as np
 import copy
-
-
+import pickle
 
 folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/boats'
-# start_point = (-1,-1)
-# end_point = (-1,-1)
-
-images = []
 
 
-class Image():
+# images2 = pickle.load(open(os.path.join(folder_path,'boxes.txt'), "rb"))
 
-    def __init__(self, filename, boxes = []):
-        self.filename = filename
-        self.boxes = boxes
+# print('HEHREIWAHFSJDFAJSDOF')
+# for keys,values in images2.items():
+#     print(keys)
+#     print(values)
+
+# print('GADHFgdjkfhgiksdhruioøghaeiorgvjndklg')
 
 
+
+
+images = {}
 
 
 def draw_rectangle(event, x, y, flags, params):
@@ -33,6 +34,8 @@ def draw_rectangle(event, x, y, flags, params):
 
 
 for filename in os.listdir(folder_path):
+    if filename == 'ground_truth.txt':
+        continue
     img = cv2.imread(os.path.join(folder_path,filename))
     #img = np.zeros((512,512,3), np.uint8)
     img_true = copy.copy(img)
@@ -62,10 +65,13 @@ for filename in os.listdir(folder_path):
         else:
             print(k)
     
-    images.append(Image(filename, boxes))
+    images[filename] = boxes
     cv2.destroyAllWindows()
 
-for elem in images:
-    print(elem.filename)
-    print(elem.boxes)
 
+pickle.dump(images, open(os.path.join(folder_path,'ground_truth.txt'), "wb"))
+
+
+# for keys,values in images.items():
+#     print(keys)
+#     print(values)
