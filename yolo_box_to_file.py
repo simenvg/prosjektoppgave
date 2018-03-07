@@ -5,7 +5,7 @@ import pickle
 
 
 darknet_path = '/home/simenvg/environments/my_env/darknet'
-folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/boats'
+folder_paths = ['/home/simenvg/environments/my_env/prosjektoppgave/Dataset/dark_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_sea']
 
 detector = Detector(darknet_path,
                     darknet_path + '/cfg/coco.data',
@@ -25,13 +25,14 @@ def detect(img_path):
 	return objects
 
 
+for folder_path in folder_paths:
+	for filename in os.listdir(folder_path):
+		if filename[len(filename)-3:] == 'txt':
+			continue
+		boxes = detect(os.path.join(folder_path,filename))
+		print(boxes)
+		images[filename] = boxes
 
-for filename in os.listdir(folder_path):
-	if filename[len(filename)-3:] == 'txt':
-		continue
-	boxes = detect(os.path.join(folder_path,filename))
-	print(boxes)
-	images[filename] = boxes
 
-
-pickle.dump(images, open(os.path.join(folder_path,'YOLO.txt'), "wb"))
+	pickle.dump(images, open(os.path.join(folder_path,'YOLO.txt'), "wb"))
+	images = {}

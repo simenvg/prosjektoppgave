@@ -4,7 +4,7 @@ import numpy as np
 import copy
 import pickle
 
-folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/boats'
+folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_shore'
 
 
 # images2 = pickle.load(open(os.path.join(folder_path,'boxes.txt'), "rb"))
