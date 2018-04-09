@@ -5,7 +5,7 @@ import pickle
 
 
 darknet_path = '/home/simenvg/environments/my_env/darknet'
-folder_paths = ['/home/simenvg/environments/my_env/prosjektoppgave/Dataset/dark_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_sea']
+folder_paths = ['/home/simenvg/environments/my_env/prosjektoppgave/Dataset/resized_dark_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_shore', '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_sea']
 
 detector = Detector(darknet_path,
                     darknet_path + '/cfg/coco.data',
