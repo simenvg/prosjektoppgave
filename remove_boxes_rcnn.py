@@ -37,6 +37,7 @@ def intersect_over_union(box_1, box_2):
 
 def validated_detected_objects(YOLO_boxes, GT_boxes):
 	approved_boxes = []
+	#print(YOLO_boxes)
 	for GT_box in GT_boxes:
 		#print('HEI')
 		for YOLO_box in YOLO_boxes:
@@ -50,16 +51,14 @@ def validated_detected_objects(YOLO_boxes, GT_boxes):
 	return approved_boxes
 
 def get_box_center(box):
-	print(box)
 	x = abs((box[0][0] + box[1][0])/2)
 	y = abs((box[0][1] + box[1][1])/2)
-	print('box center: ', x, '  , ', y)
 	return (x,y)
 
 
 def euc_dist(point_1, point_2):
 	return distance.euclidean(point_1, point_2)
-	#return sqrt(pow(point_1[0] - point_2[0], 2) + pow(point_1[1] - point_2[1], 2))
+	#return sqrt(pow(point_1[0] - point_2[0], 2) + pow(point_1[1] - opint_2[1], 2))
 
 
 
@@ -69,6 +68,7 @@ images_R_CNN = pickle.load(open(os.path.join(folder_path,'dark_sea_rcnn.txt'), "
 
 filenames = []
 
+#print(images_R_CNN)
 
 
 for keys, values in images_GT.items():
@@ -77,46 +77,102 @@ for keys, values in images_GT.items():
 
 images_R_CNN_iou ={}
 
+#for key, value in images_R_CNN.items() :
+    #print('filename: ', key)
 
 
+#print(images_R_CNN)
 for image in filenames:
-	iou_rcnn_boxes = validated_detected_objects(images_R_CNN[image], images_GT[image])
+	#print(images_R_CNN[image][0])
+	iou_rcnn_boxes = validated_detected_objects(images_R_CNN[image][0], images_GT[image])
 	images_R_CNN_iou[image] = iou_rcnn_boxes
 
 
 #print(images_R_CNN)
 
-images_R_CNN_2 = {}
 
 
-for image in filenames:
-	closest_boxes = []
-	for i in range(len(images_GT[image])):
+
+def tangstad_remove(filenames, GT_images, rcnn_images):
+	images_approved_boxes = {}
+
+	for image in filenames:
+		closest_boxes = []
+		for i in range(len(GT_images[image])):
+			#print(image)
+			#print('HEI:   ', images_GT[image][i])
+			if len(rcnn_images[image]) > 0:
+				closest_box = rcnn_images[image][0]
+				shortest_dist = euc_dist(get_box_center(GT_images[image][i]), get_box_center(rcnn_images[image][0]))
+				for j in range(1, len(rcnn_images[image])):
+					dist = euc_dist(get_box_center(GT_images[image][i]), get_box_center(rcnn_images[image][j])) 
+					#print('box: ,', images_R_CNN_iou[image][j])
+					#print('distance: ', dist)
+					if dist < shortest_dist:	
+						shortest_dist = dist
+						closest_box = rcnn_images[image][j]
+				closest_boxes.append(closest_box)
+				#print(image)
+				#print('1:   ', images_R_CNN_iou[image])
+				rcnn_images[image].remove(closest_box)
+		#print(closest_boxes)
+				#print('2:   ', images_R_CNN_iou[image])
+		images_approved_boxes[image] = closest_boxes
+	return images_approved_boxes
+
+
+# print('HALLO: ', rcnn_images)
+
+# images_R_CNN_2 = tangstad_remove(filenames, images_GT, images_R_CNN_iou)
+
+def valid_remove_boxes(filenames, rcnn_images):
+	
+	image_boxes = {}
+	for image in filenames:
 		print(image)
-		print('HEI:   ', images_GT[image][i])
-		if len(images_R_CNN_iou[image]) > 0:
-			closest_box = images_R_CNN_iou[image][0]
-			shortest_dist = euc_dist(get_box_center(images_GT[image][i]), get_box_center(images_R_CNN_iou[image][0]))
-			for j in range(1, len(images_R_CNN_iou[image])):
-				dist = euc_dist(get_box_center(images_GT[image][i]), get_box_center(images_R_CNN_iou[image][j])) 
-				print('box: ,', images_R_CNN_iou[image][j])
-				print('distance: ', dist)
-				if dist < shortest_dist:	
-					shortest_dist = dist
-					closest_box = images_R_CNN_iou[image][j]
-			closest_boxes.append(closest_box)
-			print(image)
-			#print('1:   ', images_R_CNN_iou[image])
-			images_R_CNN_iou[image].remove(closest_box)
-	print(closest_boxes)
-			#print('2:   ', images_R_CNN_iou[image])
-	images_R_CNN_2[image] = closest_boxes
+		#print('HEIHEI: ', rcnn_images[image])
+
+		#print('BOXES: ', boxes)
+		best_boxes = []
+		if len(rcnn_images[image][0]) > 0:
+
+			while(len(rcnn_images[image][0]) > 0):
+				# best_boxes = []
+				print(len(rcnn_images[image][0]))
+				box = rcnn_images[image][0][0]
+				score = rcnn_images[image][1][0]
+				intersected_boxes = [box]
+				intersected_scores = [score]
+				for i in range(1, len(rcnn_images[image][0])):
+					
+			#		print('FADGF:  ', boxes[i])
+					if intersect_over_union(box, rcnn_images[image][0][i]) > 0.5:
+						intersected_boxes.append(rcnn_images[image][0][i])
+						intersected_scores.append(rcnn_images[image][1][i])
+
+				highest_score = intersected_scores[0]
+				best_box = intersected_boxes[0]
+				for i in range(1, len(intersected_boxes)):
+					if intersected_scores[i] > highest_score:
+						best_box = intersected_boxes[i]
+						highest_score = intersected_scores[i]
+				best_boxes.append(best_box)
+				print('Best boxes:  ', best_boxes)
+
+				for i in range(len(intersected_scores)):
+					rcnn_images[image][0].remove(intersected_boxes[i])
+					rcnn_images[image][1].remove(intersected_scores[i])
+		image_boxes[image] = best_boxes
+	return image_boxes
 
 
 
 
- 
 
+
+images_R_CNN_2 = valid_remove_boxes(filenames, images_R_CNN)
+
+#print('gasdfgdsf  ', images_R_CNN_2)
 
 
 total_true_positives = 0

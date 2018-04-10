@@ -2,22 +2,22 @@ import os
 import pickle
 
 
-folderpath = '/home/simenvg/environments/my_env/prosjektoppgave/score_box/light_sea_rcnn'
+folderpath = '/home/simenvg/environments/my_env/prosjektoppgave/score_box/dark_sea_rcnn'
 
 images = {}
 
 scores_path = folderpath + '/scores'
 boxes_path =  folderpath + '/boxes'
 
-print(scores_path)
+# print(scores_path)
 
 scores = sorted(os.listdir(folderpath + '/scores'))
 boxes  = sorted(os.listdir(folderpath + '/boxes'))
 
 
-for i in range(len(scores)):
-    print(scores[i])
-    print(boxes[i])
+# for i in range(len(scores)):
+#     print(scores[i])
+#     print(boxes[i])
 
 
 
@@ -27,6 +27,7 @@ images ={}
 for i in range(len(scores)):    # Looper gjennom bilder
     print('########################')
     approved_boxes = []
+    box_scores = []
 
     with open(os.path.join(scores_path, scores[i])) as f:
         #print('hei')
@@ -42,6 +43,7 @@ for i in range(len(scores)):    # Looper gjennom bilder
             #print(image_scores[j])
             #print('GDFSHFH')
             approved_boxes.append(image_boxes[j])
+            box_scores.append(image_scores[j])
     #print(approved_boxes)
 
     filename = scores[i][:-4]
@@ -57,9 +59,11 @@ for i in range(len(scores)):    # Looper gjennom bilder
         lst = elem.split(",")
         
         objects.append([(int(float(lst[0])), int(float(lst[1]))), (int(float(lst[2])), int(float(lst[3])))])
-        print(objects)
+        #print(objects)
 
-    images[filename] = objects
+    images[filename] = (objects, box_scores)
+    print(filename)
     #print(images)
 
-pickle.dump(images, open(os.path.join(folderpath,'light_sea_rcnn.txt'), "wb"))
+#print(images)
+pickle.dump(images, open(os.path.join(folderpath,'dark_sea_rcnn.txt'), "wb"))
