@@ -142,10 +142,6 @@ def valid_remove_boxes(filenames, rcnn_images):
 	
 	image_boxes = {}
 	for image in filenames:
-		#print(image)
-		#print('HEIHEI: ', rcnn_images[image])
-
-		#print('BOXES: ', boxes)
 		best_boxes = []
 		if len(rcnn_images[image][0]) > 0:
 
