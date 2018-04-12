@@ -3,11 +3,16 @@ import cv2
 import os
 from math import sqrt, pow
 from scipy.spatial import distance
+import copy
 
-folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/dark_sea'
+folder = 'dark_sea'
 
 
 
+folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/' + folder
+
+
+BLUE = (255,0,0)
 RED = (0,0,255)
 GREEN = (0,255,0)
 YELLOW = (255,255,0)
@@ -35,19 +40,27 @@ def intersect_over_union(box_1, box_2):
 		return intersection / (area_box_1 + area_box_2 - intersection)
 
 
-def validated_detected_objects(YOLO_boxes, GT_boxes):
+def validated_detected_objects(detected_boxes, GT_boxes):
 	approved_boxes = []
-	#print(YOLO_boxes)
+	temp_detected_boxes = copy.copy(detected_boxes)
+	#print(temp_detected_boxes[0])
 	for GT_box in GT_boxes:
 		#print('HEI')
-		for YOLO_box in YOLO_boxes:
-			#print("HALLO")
-			iou = intersect_over_union(GT_box, YOLO_box)
-			if iou != -1:
-				pass
-				#print('iou: ', iou)
-			if iou >= 0.5:
-				approved_boxes.append(YOLO_box)
+		if len(temp_detected_boxes) > 0:
+			best_iou = intersect_over_union(temp_detected_boxes[0], GT_box)
+			best_box = temp_detected_boxes[0]
+			for i in range(1, len(temp_detected_boxes)):
+				#print("HALLO")
+				iou = intersect_over_union(GT_box, temp_detected_boxes[i])
+				if iou != -1:
+					pass
+					#print('iou: ', iou)
+				if iou >= 0.5 and iou > best_iou:
+					#print(iou)
+					best_box = temp_detected_boxes[i]
+					best_iou = iou
+			approved_boxes.append(best_box)
+			temp_detected_boxes.remove(best_box)
 	return approved_boxes
 
 def get_box_center(box):
@@ -64,7 +77,7 @@ def euc_dist(point_1, point_2):
 
 
 images_GT = pickle.load(open(os.path.join(folder_path,'ground_truth.txt'), "rb"))
-images_R_CNN = pickle.load(open(os.path.join(folder_path,'dark_sea_rcnn.txt'), "rb"))
+images_R_CNN = pickle.load(open(os.path.join(folder_path,(folder + '_rcnn.txt')), "rb"))
 
 filenames = []
 
@@ -129,7 +142,7 @@ def valid_remove_boxes(filenames, rcnn_images):
 	
 	image_boxes = {}
 	for image in filenames:
-		print(image)
+		#print(image)
 		#print('HEIHEI: ', rcnn_images[image])
 
 		#print('BOXES: ', boxes)
@@ -138,7 +151,7 @@ def valid_remove_boxes(filenames, rcnn_images):
 
 			while(len(rcnn_images[image][0]) > 0):
 				# best_boxes = []
-				print(len(rcnn_images[image][0]))
+				#print(len(rcnn_images[image][0]))
 				box = rcnn_images[image][0][0]
 				score = rcnn_images[image][1][0]
 				intersected_boxes = [box]
@@ -157,7 +170,7 @@ def valid_remove_boxes(filenames, rcnn_images):
 						best_box = intersected_boxes[i]
 						highest_score = intersected_scores[i]
 				best_boxes.append(best_box)
-				print('Best boxes:  ', best_boxes)
+				#print('Best boxes:  ', best_boxes)
 
 				for i in range(len(intersected_scores)):
 					rcnn_images[image][0].remove(intersected_boxes[i])
@@ -168,39 +181,62 @@ def valid_remove_boxes(filenames, rcnn_images):
 
 
 
-
-
-images_R_CNN_2 = valid_remove_boxes(filenames, images_R_CNN)
+images_YOLO = pickle.load(open(os.path.join(folder_path,'YOLO.txt'), "rb"))
+images_R_CNN_tangstad = tangstad_remove(filenames, images_GT, images_R_CNN_iou)
+images_R_CNN_valid = valid_remove_boxes(filenames, images_R_CNN)
 
 #print('gasdfgdsf  ', images_R_CNN_2)
 
 
-total_true_positives = 0
-total_detections = 0
-undetected_objects = 0
+
+
+def get_precision(filenames, GT_boxes, detected_boxes):
+	sum_detected_objects = 0
+	sum_true_positives = 0
+	for image in filenames:
+		print(image)
+		sum_detected_objects += len(detected_boxes[image])
+		sum_true_positives += len(validated_detected_objects(detected_boxes[image], GT_boxes[image]))
+		print('Num detected objects: ', sum_detected_objects)
+		print('Num true positives: ', sum_true_positives)
+	return sum_true_positives / sum_detected_objects
+
+def get_recall(filenames, GT_boxes, detected_boxes):
+	sum_GT_boxes = 0
+	sum_true_positives = 0
+	for image in filenames:
+		sum_GT_boxes += len(GT_boxes[image])
+		sum_true_positives += len(validated_detected_objects(detected_boxes[image], GT_boxes[image]))
+	return sum_true_positives / sum_GT_boxes
+
+
+
+
+#print(images_R_CNN_valid)
+#tangstad_recall = get_recall(filenames, images_GT, images_R_CNN_tangstad)
+valid_recall = get_recall(filenames, images_GT, images_R_CNN_valid)
+#tangstad_precision = get_precision(filenames, images_GT, images_R_CNN_tangstad)
+valid_precision = get_precision(filenames, images_GT, images_R_CNN_valid)
+yolo_recall = get_recall(filenames, images_GT, images_YOLO)
+yolo_precision = get_precision(filenames, images_GT, images_YOLO)
+
+#print('Tangstad,   recall: ', tangstad_recall, '    precision: ', tangstad_precision)
+print('Valid,   recall: ', valid_recall, '    precision: ', valid_precision)
+print('YOLO,   recall: ', yolo_recall, '    precision: ', yolo_precision)
+
+
 
 for image in filenames:
 	#print(images_GT[image])
+	valid_rcnn = validated_detected_objects(images_R_CNN_valid[image], images_GT[image])
 	img = cv2.imread(os.path.join(folder_path,image))
-	# approved_YOLO_boxes = validated_detected_objects(images_YOLO[image], images_GT[image])
-	# for box in images_R_CNN[image]:
-	# 	cv2.rectangle(img, box[0], box[1], RED, 1)
-	for box in images_R_CNN_2[image]:
-		cv2.rectangle(img, box[0], box[1], YELLOW, 2)
+	for box in valid_rcnn:
+		cv2.rectangle(img, box[0], box[1], BLUE, 2)
+	for box in images_R_CNN_valid[image]:
+		cv2.rectangle(img, box[0], box[1], RED, 1)
+	for box in images_YOLO[image]:
+		cv2.rectangle(img, box[0], box[1], YELLOW, 1)
 	for box in images_GT[image]:
 		cv2.rectangle(img, box[0], box[1], GREEN, 1)
 	cv2.imshow('image', img)
 	cv2.waitKey(0)
-	# total_true_positives += len(approved_YOLO_boxes)
-	# total_detections += len(images_YOLO[image])
-	# print('Detections: ', total_detections)
-	# print('approved: ', total_true_positives)
-
-	#undetected_objects += len()
-
-# average_precision = total_true_positives/total_detections
-
-# print('True positives: ', total_true_positives)
-# print('False positives: ', total_detections - total_true_positives)
-
-# print('Average precision = ', average_precision)
