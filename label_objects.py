@@ -4,7 +4,7 @@ import numpy as np
 import copy
 import pickle
 
-folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/light_shore'
+folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/resized_dark_shore'
 
 
 # images2 = pickle.load(open(os.path.join(folder_path,'boxes.txt'), "rb"))
@@ -34,7 +34,7 @@ def draw_rectangle(event, x, y, flags, params):
 
 
 for filename in os.listdir(folder_path):
-    if filename == 'ground_truth.txt':
+    if filename == 'ground_truth.txt' or filename == 'YOLO.txt':
         continue
     img = cv2.imread(os.path.join(folder_path,filename))
     #img = np.zeros((512,512,3), np.uint8)

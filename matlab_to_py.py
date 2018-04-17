@@ -2,7 +2,7 @@ import os
 import pickle
 
 
-folderpath = '/home/simenvg/environments/my_env/prosjektoppgave/score_box/dark_sea_rcnn'
+folderpath = '/home/simenvg/environments/my_env/prosjektoppgave/score_box/light_sea_rcnn'
 
 images = {}
 
@@ -54,16 +54,16 @@ for i in range(len(scores)):    # Looper gjennom bilder
 
     objects = []
 
-    for elem in approved_boxes:
+    for elem in image_boxes:
         elem = elem.replace("'", "")
         lst = elem.split(",")
         
         objects.append([(int(float(lst[0])), int(float(lst[1]))), (int(float(lst[2])), int(float(lst[3])))])
         #print(objects)
 
-    images[filename] = (objects, box_scores)
+    images[filename] = (objects, image_scores)
     print(filename)
     #print(images)
 
 #print(images)
-pickle.dump(images, open(os.path.join(folderpath,'dark_sea_rcnn.txt'), "wb"))
+pickle.dump(images, open(os.path.join(folderpath,'light_sea_rcnn.txt'), "wb"))
