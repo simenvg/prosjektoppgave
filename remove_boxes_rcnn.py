@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 
 
-folder = 'light_shore'
+folder = 'resized_dark_shore'
 
 folder_path = '/home/simenvg/environments/my_env/prosjektoppgave/Dataset/' + folder
 
@@ -46,6 +46,8 @@ def validated_detected_objects(detected_boxes, GT_boxes):
 	approved_boxes = []
 
 	temp_detected_boxes = copy.copy(detected_boxes)
+
+
 	#print('TEMP: ', temp_detected_boxes)
 	#print('GT_boxes:  ', GT_boxes)
 	for GT_box in GT_boxes:
@@ -98,9 +100,13 @@ filenames = []
 
 #print(images_R_CNN)
 
+num_GT_boxes = 0
 
 for keys, values in images_GT.items():
 	filenames.append(keys)
+	num_GT_boxes += len(values)
+
+print('num: ', num_GT_boxes)
 
 
 images_R_CNN_iou ={}
@@ -188,6 +194,7 @@ def valid_remove_boxes(filenames, rcnn_images):
 				for i in range(len(intersected_scores)):
 					rcnn_images[image][0].remove(intersected_boxes[i])
 					rcnn_images[image][1].remove(intersected_scores[i])
+		#print('scores: ', len(scores), '  boxes: ', len(best_boxes))
 		image_boxes[image] = (best_boxes, scores)
 	return image_boxes
 
@@ -199,23 +206,25 @@ images_R_CNN_tangstad = tangstad_remove(filenames, images_GT, images_R_CNN_iou)
 
 
 images_R_CNN_conf_over_25 = {}
-
+lol2 = copy.deepcopy(images_R_CNN)
 
 
 for key, value in images_R_CNN.items():
 	boxes = []
 	scores = []
 	for i in range(len(value[0])):
-		if float(value[1][i]) >= 0.25:
+		if float(value[1][i]) >= 0.5:
 			boxes.append(value[0][i])
 			scores.append(value[1][i])
 	images_R_CNN_conf_over_25[key] = (boxes, scores)
 
 lol = copy.deepcopy(images_R_CNN_conf_over_25)
 
+
 images_R_CNN_valid_over_25 = valid_remove_boxes(filenames, lol)
-images_R_CNN_valid = valid_remove_boxes(filenames, images_R_CNN)
-print('length: ', len(images_R_CNN_valid[folder + '_1.jpg'][0]))
+images_R_CNN_valid = valid_remove_boxes(filenames, lol2)
+
+#print('length: ', len(images_R_CNN_valid[folder + '_1.jpg'][0]))
 
 #print(images_R_CNN_valid)
 #print('gasdfgdsf  ', images_R_CNN_2)
@@ -242,8 +251,8 @@ def get_precision(filenames, GT_boxes, detected_boxes):
 	sum_true_positives = 0
 	for image in filenames:
 		#print(image)
-		sum_detected_objects += len(detected_boxes[image])
-		sum_true_positives += len(validated_detected_objects(detected_boxes[image], GT_boxes[image]))
+		sum_detected_objects += len(detected_boxes[image][0])
+		sum_true_positives += len(validated_detected_objects(detected_boxes[image][0], GT_boxes[image]))
 		#print('Num detected objects: ', sum_detected_objects)
 		#print('Num true positives: ', sum_true_positives)
 	if sum_detected_objects == 0:
@@ -255,7 +264,8 @@ def get_recall(filenames, GT_boxes, detected_boxes):
 	sum_true_positives = 0
 	for image in filenames:
 		sum_GT_boxes += len(GT_boxes[image])
-		sum_true_positives += len(validated_detected_objects(detected_boxes[image], GT_boxes[image]))
+		sum_true_positives += len(validated_detected_objects(detected_boxes[image][0], GT_boxes[image]))
+		#print('GT: ', sum_GT_boxes, '   TP: ', sum_true_positives)
 	return sum_true_positives / sum_GT_boxes
 
 
@@ -264,10 +274,12 @@ def boxes_based_on_score(filenames, detected_boxes, conf_level):
 	images = {}
 	for image in filenames:
 		boxes = []
+		scores = []
 		for i in range(len(detected_boxes[image][0])):
 			if float(detected_boxes[image][1][i]) > conf_level:
 				boxes.append(detected_boxes[image][0][i])
-		images[image] = boxes
+				scores.append(float(detected_boxes[image][1][i]))
+		images[image] = (boxes, scores)
 	return images
 
 
@@ -279,11 +291,12 @@ def plot_precision_recall(yolo_prec_recall, rcnn_prec_recall, rcnn_prec_recall_r
 	#fig_2, ax_2 = plt.subplots()
 	for i in range(len(yolo_prec_recall[0])):
 		if yolo_prec_recall[0][i] != -1:
-			ax_1.plot(yolo_prec_recall[0][i], yolo_prec_recall[1][i], 'o', color='red', label='YOLO, AP: ' + str(round(get_average_precision(yolo_prec_recall),2)))
+			ax_1.plot(yolo_prec_recall[1][i], yolo_prec_recall[0][i], 'o', color='red', label='YOLO')#, AP: ' + str(round(get_average_precision(yolo_prec_recall),2)))
 		if rcnn_prec_recall[0][i] != -1:
-			ax_1.plot(rcnn_prec_recall[0][i], rcnn_prec_recall[1][i], 'X', color='blue', label='Faster R-CNN, AP: ' + str(round(get_average_precision(rcnn_prec_recall), 2)))
+			ax_1.plot(rcnn_prec_recall[1][i], rcnn_prec_recall[0][i], 'X', color='blue', label='Faster R-CNN')#, AP: ' + str(round(get_average_precision(rcnn_prec_recall), 2)))
 		if rcnn_prec_recall_removed_boxes[0][i] != -1:
-			ax_1.plot(rcnn_prec_recall_removed_boxes[0][i], rcnn_prec_recall[1][i], 'D', color='green', label='Faster R-CNN removed boxes, AP: ' + str(round(get_average_precision(rcnn_prec_recall_removed_boxes), 2)))
+			print("HEEEEI   :", rcnn_prec_recall_removed_boxes[1][i])
+			ax_1.plot(rcnn_prec_recall_removed_boxes[1][i], rcnn_prec_recall_removed_boxes[0][i], 'D', color='green', label='Faster R-CNN removed boxes')#, AP: ' + str(round(get_average_precision(rcnn_prec_recall_removed_boxes), 2)))
 	ax_1.set_title(title)
 	#txt = "YOLO AP: " + str(get_average_precision(yolo_prec_recall)) + "   Faster R-CNN AP: " + str(get_average_precision(rcnn_prec_recall)) + "  Faster R-CNN removed boxes AP: " + str(get_average_precision(rcnn_prec_recall_removed_boxes))
 	#plt.figtext(2,6, txt)
@@ -303,32 +316,42 @@ while a >= 0.01:
 
 thresholds.extend([0.001, 0.000001, 0.0000000001])
 
-# thresholds = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.99]
+# thresholds = [0.5, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 # print(thresholds)
 
 
-def generate_recall_and_precisions(filenames, GT_boxes, detected_boxes, thresholds):
+def generate_recall_and_precisions(filenames, GT_boxes, detected_boxes, thresholds, remove_boxes=False):
 	recalls = []
 	precisions = []
 	for elem in thresholds:
-		recalls.append(get_recall(filenames, GT_boxes, boxes_based_on_score(filenames, detected_boxes, elem)))
-		precisions.append(get_precision(filenames, GT_boxes, boxes_based_on_score(filenames, detected_boxes, elem)))
-
+		if remove_boxes == False:
+			recalls.append(get_recall(filenames, GT_boxes, boxes_based_on_score(filenames, detected_boxes, elem)))
+			precisions.append(get_precision(filenames, GT_boxes, boxes_based_on_score(filenames, detected_boxes, elem)))
+		else:
+			boxes_over_score = boxes_based_on_score(filenames, detected_boxes, elem)
+			valid_boxes_over_score = valid_remove_boxes(filenames, boxes_over_score)
+			recalls.append(get_recall(filenames, GT_boxes, valid_boxes_over_score))
+			precisions.append(get_precision(filenames, GT_boxes, valid_boxes_over_score))
 	return (precisions, recalls)
 
 
 def get_average_precision(prec_recall):
 	precisions = prec_recall[0]
 	sum_precisions = 0
+	num_prec = 0
 	for elem in precisions:
-		sum_precisions += elem
-	return sum_precisions/len(precisions)
+		#print(elem)
+		if elem != -1:
+			sum_precisions += elem
+			num_prec += 1
+	return sum_precisions/num_prec
 
 
-yolo_prec_recall = generate_recall_and_precisions(filenames, images_GT, images_YOLO, thresholds)
-print("###")
-rcnn_prec_recall = generate_recall_and_precisions(filenames, images_GT, images_R_CNN_2, thresholds)
-rcnn_prec_recall_removed_boxes = generate_recall_and_precisions(filenames, images_GT, images_R_CNN_valid, thresholds)
+#yolo_prec_recall = generate_recall_and_precisions(filenames, images_GT, images_YOLO, thresholds)
+#print("###")
+#rcnn_prec_recall = generate_recall_and_precisions(filenames, images_GT, images_R_CNN_2, thresholds)
+#print('#####')
+#rcnn_prec_recall_removed_boxes = generate_recall_and_precisions(filenames, images_GT, images_R_CNN_2, thresholds, remove_boxes=True)
 #print(images_R_CNN_2[folder + '_1.jpg'])
 # print(images_R_CNN_valid)
 
@@ -337,33 +360,43 @@ rcnn_prec_recall_removed_boxes = generate_recall_and_precisions(filenames, image
 # ax.plot(yolo_recall, yolo_prec, 'o', color='C0')
 # plt.show()
 
+#print('PREC_RECALL:  ', rcnn_prec_recall_removed_boxes)
+#print('YOLO AP: ', get_average_precision(yolo_prec_recall))
+#print('Faster R-CNN AP: ', get_average_precision(rcnn_prec_recall))
+#print('Faster R-CNN removed boxes AP: ', get_average_precision(rcnn_prec_recall_removed_boxes))
 
-print('YOLO AP: ', get_average_precision(yolo_prec_recall))
-print('Faster R-CNN AP: ', get_average_precision(rcnn_prec_recall))
-print('Faster R-CNN removed boxes AP: ', get_average_precision(rcnn_prec_recall_removed_boxes))
-
-plot_precision_recall(yolo_prec_recall, rcnn_prec_recall, rcnn_prec_recall_removed_boxes, folder)
+#plot_precision_recall(yolo_prec_recall, rcnn_prec_recall, rcnn_prec_recall_removed_boxes, folder)
 
 
 
 def draw_boxes(image_name, GT_boxes, detected_boxes):
 	validated_boxes = validated_detected_objects(detected_boxes, GT_boxes)
 	img = cv2.imread(os.path.join(folder_path,image_name))
+	validated_boxes_n = 0
+	gt_boxes_n = 0
 	for box in detected_boxes:
 		cv2.rectangle(img, box[0], box[1], RED, 1)
 	for box in validated_boxes:
 		cv2.rectangle(img, box[0], box[1], BLUE, 2)
+		validated_boxes_n += 1
 	for box in GT_boxes:
 		cv2.rectangle(img, box[0], box[1], GREEN, 1)
+		gt_boxes_n += 1
 	cv2.imshow(image_name, img)
 	cv2.waitKey(0)
+	return (validated_boxes_n, gt_boxes_n)
 
 
+# v = 0
+# b = 0
 # for image in filenames:
-# 	draw_boxes(image, images_GT[image], images_R_CNN_valid_over_25[image][0])
+# 	(val_b, gt_b) = draw_boxes(image, images_GT[image], images_R_CNN_valid_over_25[image][0])
+# 	v += val_b
+# 	b += gt_b
 
-image = 'light_shore_18.jpg'
+# print(v, '    ', b, '    ', v/b)
+# # image = 'light_shore_24.jpg'
 
-draw_boxes(image, images_GT[image], images_YOLO_conf_over_25[image][0])
-draw_boxes(image, images_GT[image], images_R_CNN_conf_over_25[image][0])
-draw_boxes(image, images_GT[image], images_R_CNN_valid_over_25[image][0])
+# draw_boxes(image, images_GT[image], images_YOLO_conf_over_25[image][0])
+# draw_boxes(image, images_GT[image], images_R_CNN_conf_over_25[image][0])
+# draw_boxes(image, images_GT[image], images_R_CNN_valid_over_25[image][0])
